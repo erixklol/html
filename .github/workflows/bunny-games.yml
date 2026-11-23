@@ -1,0 +1,70 @@
+name: Upload reviewed games to Bunny CDN
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Plan only, or upload and verify reviewed packages"
+        type: choice
+        required: true
+        default: plan
+        options:
+          - plan
+          - upload
+      batch:
+        description: "Maximum eligible games in this run"
+        type: choice
+        required: true
+        default: "10"
+        options:
+          - "10"
+          - "50"
+          - "100"
+          - all
+      resume_after:
+        description: "Optional last completed ID from the previous report (for example gn-101)"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bunny-reviewed-games
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    name: ${{ inputs.mode }} reviewed games
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Plan batch
+        if: inputs.mode == 'plan'
+        env:
+          BATCH: ${{ inputs.batch }}
+          RESUME_AFTER: ${{ inputs.resume_after }}
+        run: node scripts/bunny-upload.mjs --mode=plan --batch="$BATCH" --resume-after="$RESUME_AFTER"
+      - name: Upload and verify batch
+        if: inputs.mode == 'upload'
+        env:
+          BATCH: ${{ inputs.batch }}
+          RESUME_AFTER: ${{ inputs.resume_after }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+        run: node scripts/bunny-upload.mjs --mode=upload --batch="$BATCH" --resume-after="$RESUME_AFTER"
+      - name: Save inventory, report, and verified manifest proposal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bunny-games-${{ github.run_id }}-${{ github.run_attempt }}
+          path: bunny-upload-results/*.json
+          if-no-files-found: warn
+          retention-days: 30
