@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "packages": [
+    {
+      "id": "gn-101",
+      "source": "101-fix.html",
+      "sourceSha256": "1a31ef393f1cd185bf78a329d1a6410732e75b65b3926e3038512b6b2c67d3f2",
+      "rightsReviewed": true,
+      "rightsBasis": "Owner-authorized fork recorded in erixklol/gurtsgames game-host/README.md and AGENTS.md",
+      "dependenciesReviewed": true,
+      "startupReport": true,
+      "files": {
+        "index.html": "36a02cec50e62ea7580a2e3cdbc5a98c78371950afe2a7e2c6270f8658e9df04"
+      }
+    }
+  ]
+}
