@@ -2,15 +2,34 @@
   "version": 1,
   "packages": [
     {
-      "id": "gn-101",
-      "source": "101-fix.html",
-      "sourceSha256": "1a31ef393f1cd185bf78a329d1a6410732e75b65b3926e3038512b6b2c67d3f2",
+      "id": "gn-114",
+      "source": "114-fix2.html",
+      "sourceSha256": "5f099239843108c0ccc67f3c05e41739bc249561892dbf7d1e7544ddc8be6eb2",
       "rightsReviewed": true,
-      "rightsBasis": "Owner-authorized fork recorded in erixklol/gurtsgames game-host/README.md and AGENTS.md",
+      "rightsBasis": "Original ovolve/2048-AI project at pinned commit contains the MIT license; bundled license and author attribution retained.",
+      "rightsEvidence": {
+        "type": "open-license",
+        "url": "https://github.com/ovolve/2048-AI/blob/226be513371ce2493843b2485c280e2389ef7dad/LICENSE.txt",
+        "description": "MIT license in the original 2048-AI repository; the game and AI fork are linked from the GN catalog source.",
+        "licenseFile": "LICENSE.txt"
+      },
       "dependenciesReviewed": true,
-      "startupReport": true,
+      "startupReport": false,
       "files": {
-        "index.html": "36a02cec50e62ea7580a2e3cdbc5a98c78371950afe2a7e2c6270f8658e9df04"
+        "ATTRIBUTION.txt": "963457f8f69bd5d76693adf3b612c15f31a79bcc831d5e0767b53a3444bda0e0",
+        "LICENSE.txt": "57e12c39a6ad9d98b2e451065bfdfbd15fc9e0c2ed3bf4dc1d09acab41ff02fc",
+        "index.html": "9c6411d1f22f35c3ea6399aa554ad2e1df63af4fe2d87319063debe5c71a4cb8",
+        "js/ai.js": "a816d4192e5703410913f73847fd84fd53fec54425522723a779f8f12dc5db9f",
+        "js/animframe_polyfill.js": "b9ba80189171d8158b60f7a88d05deb69269c20aa6f901b6cae590668e9bb0bb",
+        "js/application.js": "86f6e21b5d8c6f840276a47f98c5d0c4b68da41662e1b8833add48ac46644084",
+        "js/game_manager.js": "217c4cd61754b1b8d0ba9a9b56977d08618c82f858b8c5f19a3f94142b3a4cf7",
+        "js/grid.js": "0ba311109f2a906e2f925284cfd158bb6d34e520048810fb0d666a3a7f0771a1",
+        "js/hammer.min.js": "50f3a5ea2c19aa1d6b9e83cd0800a57e17c430d2ac1fbd69f7fb812f1e08680a",
+        "js/html_actuator.js": "1f9116531c2be2916b79e7e8c2a395cadb3b7d8255161df96305b612b50a7c7b",
+        "js/keyboard_input_manager.js": "4c7ee76fb17941f8faf0c0dd67077f283837d80b41f222d17ad3e96cfdb604a1",
+        "js/tile.js": "17b4e36dd125d5b1fa35a8424d2274437994c4d181d62cce5de773883d50dfd2",
+        "style/ai.css": "d01d06c36143432436f07402cf113511e55e8067a15352254559e17a01564105",
+        "style/main.css": "b46a4ccef11683b3e964c775c90826089ec5c744dac55e82e8d892e6d6f938bf"
       }
     }
   ]

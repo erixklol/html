@@ -1,0 +1,6 @@
+2048 by Gabriele Cirulli; AI solver by Matt Overlan.
+Original project: https://github.com/ovolve/2048-AI/tree/226be513371ce2493843b2485c280e2389ef7dad
+Original 2048: https://github.com/gabrielecirulli/2048
+Hammer.js by Jorik Tangelder (MIT notice retained in js/hammer.min.js).
+MIT license: see LICENSE.txt. This package removes external analytics, sharing widgets,
+the optional font files, favicon and spinner image. Gameplay and AI scripts remain.

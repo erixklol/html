@@ -1,31 +1,30 @@
-# Manual Bunny CDN game uploads
+# Manual Bunny CDN migration
 
-This repository contains 948 root `.html` files and one `.html-a` file. Those are **source files, not an approved upload batch**. Many refer to external hosts or dependencies that are not stored here, and this repository does not provide rights evidence for every game. The workflow inventories them but uploads only packages explicitly listed in `bunny-packages/approved.json` after a rights and dependency review. Currently only the prepared, self-contained `gn-101` package is eligible. It was derived from this repository's `101-fix.html` and retains the reviewed Gurt's Games startup report and restrictive CSP. The documented owner-authorized fork and exact source/file hashes are pinned in the package list.
+`catalog/zones.json` maps game IDs to source HTML. `node scripts/catalog-audit.mjs` produces `bunny-upload-results/bunny-migration-report.json` with every mapped ID, source hash, duplicate/dependency flags, rights status, structural standalone flag, referenced-repository groups, and independent CDN observations. A referenced repository may be a mirror or asset host, not the original developer; groups are research leads, never automatic license approvals. `MIGRATION_REPORT.md` summarizes the review. The inventory is not a license grant.
 
-## Configure GitHub Actions in **erixklol/html**
+Only packages in `bunny-packages/approved.json` can be selected for upload. The uploader checks the catalog ID-to-source mapping, source/package hashes, specific rights evidence, bundled license for open-license games, local assets, size limits, and symlinks. `scripts/prepare-2048.mjs` reconstructs the first newly reviewed game, `gn-114`, from a pinned commit of the MIT-licensed original project. The existing `gn-101` package and public CDN file remain, but it is excluded from future uploads pending permission evidence. GN Math's catalog and generic credits do not grant rights to third-party games.
 
-In this repository's **Settings → Secrets and variables → Actions**, configure:
+## Configure GitHub Actions in erixklol/html
+
+Under **Settings → Secrets and variables → Actions**, configure:
 
 | Type | Name | Value |
 | --- | --- | --- |
-| Secret | `BUNNY_STORAGE_PASSWORD` | Password from your Bunny **Storage Zone → Access** page. If you added this secret to `erixklol/gurtsgames`, add it separately here; repository secrets are not shared. |
-| Variable | `BUNNY_STORAGE_ZONE` | The actual Storage Zone name, which may differ from `gurtsgames` or the CDN hostname. |
-| Variable | `BUNNY_STORAGE_ENDPOINT` | The HTTPS regional storage endpoint shown on that zone's Access page, for example `https://ny.storage.bunnycdn.com`. |
+| Secret | `BUNNY_STORAGE_PASSWORD` | Bunny Storage Zone password. Repository secrets are not shared with `erixklol/gurtsgames`. |
+| Variable | `BUNNY_STORAGE_ZONE` | Actual Storage Zone name, for example `gurtgames`. |
+| Variable | `BUNNY_STORAGE_ENDPOINT` | Regional HTTPS endpoint from Storage Zone → Access, for example `https://ny.storage.bunnycdn.com`. |
 
-The uploader accepts only Bunny's documented storage endpoint hosts. It uses the storage password as an `AccessKey` request header, never in a URL, source file, artifact, or printed command. Do not use a global Bunny API key. Confirm the Storage Zone is connected to the Pull Zone serving `https://gurtsgames.b-cdn.net/`. See [Bunny's Storage HTTP documentation](https://bunny.net/docs/storage/http) for endpoint and access-key details.
+The password is sent only as an `AccessKey` header to an allowlisted Bunny Storage hostname. Confirm the Storage Zone maps to `https://gurtsgames.b-cdn.net/`. See [Bunny Storage HTTP documentation](https://bunny.net/docs/storage/http).
 
-After this workflow is merged into the **default branch**, open **Actions → Upload reviewed games to Bunny CDN → Run workflow**. Choose `plan` first. It is the default and makes no network upload or secret access. Download the artifact to review the inventory and selected IDs. To publish, run again with `mode=upload` and a batch of `10`, `50`, `100`, or `all`. Those choices cap the count of **eligible packages**, not the count of raw HTML files. With the current package list, every choice selects one game.
+After merging the PR, open **Actions → Upload reviewed games to Bunny CDN → Run workflow**. The default `plan` mode makes no upload. Review its artifact first. Then select `upload` explicitly, with a batch of `10`, `50`, `100`, or `all`. Batch size limits eligible packages, not all catalog games. No schedule or push event triggers an upload.
 
-The workflow writes an artifact containing `bunny-source-inventory.json`, `bunny-upload-report.json`, and `bunny-manifest-proposal.json`. The proposal contains only games whose **public CDN HTML and every packaged asset** returned the expected bytes and MIME type. A plan or failed verification never proposes an unverified game. The workflow has read-only GitHub permission and does not edit `gurtsgames`, merge, deploy, or change its existing Pages hosts. `gn-101` is already a candidate in Gurt's Games PR #13: after upload, that site's independent server check can select it automatically. Other IDs still need a separate reviewed manifest PR.
+The artifact contains source inventory, per-game migration report, upload report, and a website manifest proposal. A new game enters the proposal only after public CDN HTML and every packaged asset match the reviewed hash and content type. The workflow cannot edit `gurtsgames` or publish a game there. Create a separate reviewed PR to add verified new IDs to `erixklol/gurtsgames/src/lib/gn-bunny-deployments.json`; the website then performs its own launch checks. Existing GitHub Pages hosts remain available.
 
-If a run fails, read `failed` and `lastCompleted` in the report. Re-run with `resume_after` equal to `lastCompleted`; leave it blank if no game completed. A partially uploaded game is safe to retry: files already matching the reviewed hash are skipped. If the CDN serves different bytes at a destination, the uploader stops instead of overwriting them. It never sends DELETE requests. Bunny edge caches may briefly keep a 404 after upload; a later manual run can verify it without re-uploading matching files.
+If a run fails, use `lastCompleted` as `resume_after` on the next manual run. Already matching CDN files are skipped. Different bytes at an existing destination stop the run; it never overwrites them or sends DELETE. A propagation delay may require a later verification run.
 
-## Add another eligible package
+## Review additional games
 
-1. Confirm you have hosting rights for the specific game and record the basis in `bunny-packages/approved.json`. An owner fork alone is not a blanket license for all game content. Confirm gameplay and all dependencies in a browser. Do not mark a game eligible solely because its root HTML file exists.
-2. Place a reviewed `index.html` and **all** its relative JavaScript, CSS, image, audio, WASM, font, and other required files under `bunny-packages/gn-<catalog-id>/`, preserving the exact relative layout. Root-relative URLs, `<base>`, and unreviewed dynamic or external network dependencies must be resolved before packaging. No symlinks. The HTML must be at most 100 KB and the package may include at most 64 assets to match the Gurt's Games [PR #13 verification limits](https://github.com/erixklol/gurtsgames/pull/13).
-3. Add the catalog ID, source filename and source SHA-256, rights review note, dependency review flag, truthful `startupReport` flag, and the SHA-256 of **every** package file to `approved.json`. The uploader recalculates and checks every hash. It rejects missing, extra, changed, oversized, or statically referenced but unlisted assets.
-4. Run `node --test tests/bunny-upload.test.mjs` and `node scripts/bunny-upload.mjs --mode=plan --batch=10`. Review the plan and rights basis. Then use the manual workflow upload mode.
-5. Review the verified proposal and make a separate PR to merge **new IDs** into `erixklol/gurtsgames/src/lib/gn-bunny-deployments.json`. That site still performs its own server-side HTML hash and relative-asset checks at launch. Browser-test each game in its sandbox before claiming gameplay works. A successful upload does not automatically add new IDs to the site.
-
-This is deliberately an opt-in migration. The uploader never tries to transfer all 948 HTML files, infer rights from a filename, invent missing assets, or rewrite existing game hosts.
+1. Find the exact game's code, art, audio, and font licenses, or written authorization from every relevant rights holder. Record a direct evidence URL and description. A public repository or GN Math listing alone is insufficient.
+2. Verify local dependencies and gameplay. Package `index.html` plus all required relative files under `bunny-packages/gn-<id>/`. Resolve external/root-relative references and remove optional tracking. Preserve licenses and creator credits. No symlinks; HTML at most 100 KB; at most 64 assets, each at most 25 MB, matching the website's [PR #13 checks](https://github.com/erixklol/gurtsgames/pull/13).
+3. Add the exact catalog source name and SHA-256, `rightsEvidence`, package hashes, and dependency review to `approved.json`. Run `node --test tests/bunny-upload.test.mjs`, `node scripts/catalog-audit.mjs`, and `node scripts/bunny-upload.mjs --mode=plan --batch=all`.
+4. Review a manual upload's verified proposal and browser-test the game before adding it to the site manifest. No new catalog ID is automatically enabled.
