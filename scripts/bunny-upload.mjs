@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { auditCatalog } from "./catalog-audit.mjs";
 
 const CDN = "https://gurtsgames.b-cdn.net";
 const REGION_HOSTS = new Set([
@@ -88,6 +89,10 @@ export function buildPlan(root, batch = "10", resumeAfter = "") {
   if (!["10", "50", "100", "all"].includes(batch)) throw new Error("Invalid batch size.");
   const config = JSON.parse(readFileSync(join(root, "bunny-packages", "approved.json"), "utf8"));
   if (config.version !== 1 || !Array.isArray(config.packages)) throw new Error("Invalid package manifest.");
+  const catalogFile = join(root, "catalog", "zones.json");
+  const catalog = existsSync(catalogFile) ? new Map(JSON.parse(readFileSync(catalogFile, "utf8"))
+    .filter((row) => Number.isSafeInteger(row.id) && row.id >= 0 && typeof row.url === "string")
+    .map((row) => [`gn-${row.id}`, row.url])) : null;
   const ids = new Set();
   const entries = config.packages.map((entry) => {
     if (!entry || !/^gn-(0|[1-9]\d{0,3})$/.test(entry.id) || ids.has(entry.id))
@@ -102,6 +107,15 @@ export function buildPlan(root, batch = "10", resumeAfter = "") {
         entry.dependenciesReviewed !== true || typeof entry.startupReport !== "boolean") {
       throw new Error(`${entry.id}: rights or dependencies have not been reviewed.`);
     }
+    if (catalog && catalog.get(entry.id) !== `{HTML_URL}/${entry.source}`)
+      throw new Error(`${entry.id}: source does not match the catalog ID.`);
+    if (!entry.rightsEvidence || !["open-license", "developer-permission"].includes(entry.rightsEvidence.type) ||
+        !/^https:\/\//.test(entry.rightsEvidence.url || "") ||
+        !entry.rightsEvidence.description?.trim())
+      throw new Error(`${entry.id}: specific hosting-rights evidence is required.`);
+    if (entry.rightsEvidence.type === "open-license" &&
+        (!entry.rightsEvidence.licenseFile || !entry.files?.[entry.rightsEvidence.licenseFile]))
+      throw new Error(`${entry.id}: the original license must be included in the reviewed package.`);
     if (entry.source && (!/^[\w.-]+\.html$/.test(entry.source) ||
         !/^[a-f0-9]{64}$/.test(entry.sourceSha256 || ""))) {
       throw new Error(`${entry.id}: invalid source provenance.`);
@@ -270,6 +284,10 @@ export async function run({ root, mode = "plan", batch = "10", resumeAfter = "",
     writeFileSync(join(outDir, "bunny-upload-report.json"), JSON.stringify(report, null, 2) + "\n");
     writeFileSync(join(outDir, "bunny-manifest-proposal.json"), JSON.stringify(proposal, null, 2) + "\n");
     writeFileSync(join(outDir, "bunny-source-inventory.json"), JSON.stringify(inventory(root), null, 2) + "\n");
+    if (existsSync(join(root, "catalog", "zones.json"))) {
+      writeFileSync(join(outDir, "bunny-migration-report.json"),
+        JSON.stringify(auditCatalog(root), null, 2) + "\n");
+    }
   }
   return { report, proposal, error };
 }

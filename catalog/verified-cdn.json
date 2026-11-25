@@ -1,0 +1,8 @@
+{
+  "gn-101": {
+    "url": "https://gurtsgames.b-cdn.net/games/gn-101/index.html",
+    "sha256": "36a02cec50e62ea7580a2e3cdbc5a98c78371950afe2a7e2c6270f8658e9df04",
+    "observedAt": "2026-11-22",
+    "method": "Public GET returned HTTP 200, text/html, and matching SHA-256"
+  }
+}

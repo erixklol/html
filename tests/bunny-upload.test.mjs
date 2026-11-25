@@ -28,6 +28,8 @@ function fixture(ids = ["gn-101"], files = { "index.html": "<html><body>Game</bo
     writeFileSync(join(root, source), "reviewed source");
     return { id, source, sourceSha256: hash("reviewed source"), rightsReviewed: true,
       rightsBasis: "Owner confirmed this exact package", dependenciesReviewed: true,
+      rightsEvidence: { type: "developer-permission", url: "https://example.org/permission",
+        description: "Permission fixture for this exact game and its assets." },
       startupReport: false, files: checksums };
   });
   writeFileSync(join(root, "bunny-packages", "approved.json"),
@@ -61,9 +63,9 @@ test("real repository inventories raw games but selects only its reviewed packag
   const root = join(import.meta.dirname, "..");
   assert.ok(inventory(root).sourceFileCount >= 900);
   const plan = buildPlan(root, "all");
-  assert.deepEqual(plan.map((item) => item.id), ["gn-101"]);
-  assert.equal(plan[0].files[0].sha256,
-    "36a02cec50e62ea7580a2e3cdbc5a98c78371950afe2a7e2c6270f8658e9df04");
+  assert.deepEqual(plan.map((item) => item.id), ["gn-114"]);
+  assert.equal(plan[0].files.find((file) => file.path === "index.html").sha256,
+    "9c6411d1f22f35c3ea6399aa554ad2e1df63af4fe2d87319063debe5c71a4cb8");
 });
 
 test("batch sizes and a contiguous resume checkpoint select eligible IDs", () => {
@@ -97,6 +99,23 @@ test("rejects unclear rights, changed files, and missing referenced assets", () 
     writeFileSync(join(data.root, "bunny-packages", "approved.json"),
       JSON.stringify({ version: 1, packages: data.packages }));
     assert.throws(() => buildPlan(data.root), /required asset js\/missing.js is missing/);
+  } finally { data.cleanup(); }
+});
+
+test("requires specific rights evidence and an exact catalog source match", () => {
+  const data = fixture(["gn-114"]);
+  try {
+    const manifest = join(data.root, "bunny-packages", "approved.json");
+    delete data.packages[0].rightsEvidence;
+    writeFileSync(manifest, JSON.stringify({ version: 1, packages: data.packages }));
+    assert.throws(() => buildPlan(data.root), /hosting-rights evidence/);
+    data.packages[0].rightsEvidence = { type: "developer-permission",
+      url: "https://example.org/permission", description: "Exact game permission." };
+    mkdirSync(join(data.root, "catalog"));
+    writeFileSync(join(data.root, "catalog", "zones.json"),
+      JSON.stringify([{ id: 114, name: "2048", url: "{HTML_URL}/different.html" }]));
+    writeFileSync(manifest, JSON.stringify({ version: 1, packages: data.packages }));
+    assert.throws(() => buildPlan(data.root), /source does not match/);
   } finally { data.cleanup(); }
 });
 
