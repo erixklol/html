@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Plan only, or upload and verify reviewed packages"
+        description: "Plan approved packages, verify existing html-main files, or upload approved packages"
         type: choice
         required: true
         default: plan
         options:
           - plan
+          - verify-html-main
           - upload
       batch:
         description: "Maximum eligible games in this run"
@@ -51,6 +52,9 @@ jobs:
           BATCH: ${{ inputs.batch }}
           RESUME_AFTER: ${{ inputs.resume_after }}
         run: node scripts/bunny-upload.mjs --mode=plan --batch="$BATCH" --resume-after="$RESUME_AFTER"
+      - name: Verify existing html-main CDN files
+        if: inputs.mode == 'verify-html-main'
+        run: node scripts/verify-html-main.mjs
       - name: Upload and verify batch
         if: inputs.mode == 'upload'
         env:
